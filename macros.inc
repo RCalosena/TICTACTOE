@@ -36,9 +36,9 @@ TO_ASM MACRO
     ; assume que a coluna esta guardada em bx e que a linha esta guardada em si
     PUSH DX
     PUSH AX
-    ; coluna 0 .. 2 = coluna input - 1
+    ; coluna = coluna input - 1
     DEC BX
-    ; linha 0 .. 6 = (linha input - 1) * DIM
+    ; linha = (linha input - 1) * DIM
     DEC SI
     MOV AX,SI
     MOV SI,DIM
@@ -49,6 +49,7 @@ TO_ASM MACRO
 ENDM
 
 SALVA_COORDS MACRO
+    ; salva as coordenadas em BX e SI na variável
     PUSH CX
     MOV COORD_STORAGE[0],BX
     MOV COORD_STORAGE[2],SI
@@ -56,6 +57,7 @@ SALVA_COORDS MACRO
 ENDM
 
 GET_AND_COMPARE MACRO
+    ; pega as coordenadas na variável e verifica se estão livres
     MOV BX,COORD_STORAGE[0]
     MOV SI,COORD_STORAGE[2]
     AND BX,00FFh
@@ -65,6 +67,8 @@ ENDM
 
 APAGA_LINHA MACRO
     LOCAL APAGA
+    
+    ; apaga a mensagem (pensando...)
 
     PUSH CX
     PUSH DX
@@ -88,9 +92,11 @@ APAGA_LINHA MACRO
 ENDM
 
 CENTRO MACRO
+    ; calcula o centro da matriz e guarda as coordenadas em BX(coluna) e SI(linha)
     CWD
     MOV AX,DIM
     MOV CX,2
+    ; (Dimensões / 2) + resto = centro
     DIV CX
     ADD AX,DX
     MOV BX,AX
@@ -99,7 +105,7 @@ CENTRO MACRO
 ENDM
 
 TOGGLE MACRO VAR, INDEX
-    LOCAL ON, OFF
+    LOCAL ON,OFF
 
     ; liga/desliga opções (VAR) no menu Extras
     ; coloca um check (no index especificado) indicando que foi ligado

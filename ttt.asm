@@ -51,6 +51,7 @@ INCLUDE macros.inc
         ; Vai para o menu de Extras
         CMP AL,3
         JE EXTRAS
+
         ; 1 e 2 indicam o modo de jogo (jogador vs jogador, jogador vs cpu)
         MOV MODO,AL
 
@@ -63,7 +64,7 @@ INCLUDE macros.inc
         PRINT DIFFICULDADES
         PRINT ESCOLHA
 
-        ; só as teclas 1,2,3,4
+        ; lê só as teclas 1,2,3,4
         MOV CL,'1'
         MOV CH,'4'
         CALL LEIA_E_VALIDA
@@ -99,15 +100,19 @@ INCLUDE macros.inc
         JNE SKIP_BARR
             CALL PLACE_BARR
         SKIP_BARR:
+
+        ; apresenta uma tela limpa
         PRINT LIMPA_TELA
         JMP COMECO
 
+        ; se uma coordenada for ocupada, imprime essas mensagens
         TAKEN:
             PRINT LIMPA_TELA
             PRINT OCUPADA
             PULA_LINHA
+
         COMECO:
-            ; imprime matriz
+            ; imprime tabuleiro
             CALL MATRIZP
 
             ; determina o jogador atual
@@ -117,6 +122,7 @@ INCLUDE macros.inc
             JMP SETUP
             JOGADOR_O:
             MOV CL,'O'
+            
             ; se o modo de jogo eh 2, 'O' eh o CPU
             CMP MODO,2
             JNE SETUP
@@ -128,9 +134,11 @@ INCLUDE macros.inc
             SETUP:
 
             ; input para a coluna e linha
-            ; caracteres fora de 1-DIM sao omitidos
+            
             PUSH CX
+            ; msg "digite a coluna"
             PRINT COLUNA
+            ; caracteres fora de 1-DIM sao omitidos
             MOV CL,'1'
             MOV CH,DIM
             OR CH,30h
@@ -138,9 +146,11 @@ INCLUDE macros.inc
             ; transforma em numero e guarda em BX (apontador de coluna)
             AND AX,000Fh
             MOV BX,AX
+            
+            ; msg "digite a linha"
             PRINT LINHA
             CALL LEIA_E_VALIDA
-            ; transforma em numeri e guarda em SI (apontador de linha)
+            ; transforma em numero e guarda em SI (apontador de linha)
             AND AX,000Fh
             MOV SI,AX
             POP CX
@@ -156,7 +166,6 @@ INCLUDE macros.inc
             ; coloca o X ou O na posição escolhida
             MOV VELHA[BX][SI],CL
 
-            ; dois espaços
             PULA_LINHA
             PULA_LINHA
 
@@ -179,6 +188,8 @@ INCLUDE macros.inc
             MOV AL,JOGADAS
             INC AL
             MOV JOGADAS,AL
+
+            ; verifica se empatou
             CALL VERIFICA_EMPATE
             CMP AL,1
             JE DRAW
@@ -245,6 +256,7 @@ INCLUDE macros.inc
         JMP VOLTA
 
         TAMANHO:
+        ; exibe menú de (definir tamanho da matriz)
         PRINT LIMPA_TELA
         PRINT MENU_MATRIZ
         MOV CL,'1'
@@ -252,10 +264,10 @@ INCLUDE macros.inc
         CALL LEIA_E_VALIDA
         JMP XTRAS
 
+        ; liga/desliga as opções BARRICADE e pensamento do CPU
         TOGGLE_BARR:
         TOGGLE BARR 48
         JMP XTRAS
-
         TOGGLE_THINK:
         TOGGLE NO_THINK 73
         JMP XTRAS
@@ -268,8 +280,8 @@ INCLUDE macros.inc
     LEIA_E_VALIDA PROC
 
         ; inputs:
-        ;   CL = valor minimo
-        ;   CH = valor maximo
+        ; CL = valor minimo
+        ; CH = valor maximo
 
         ; le do teclado
         ; verifica se o caracter lido eh de CL a CH
@@ -309,14 +321,12 @@ INCLUDE macros.inc
     IS_OCCUPIED PROC
 
         ; inputs: 
-        ;   BX = coluna
-        ;   SI = linha
-        ;   CL = jogador (X ou O)
+        ; BX = coluna
+        ; SI = linha
 
         ; output: AL = 0 ou 1
 
         ; verifica se a posição escolhida não esta vazia
-        ; imprime uma mensagem se quem escolheu a posição eh um jogador
 
         ; '+' eh uma casa livre
         MOV AL,VELHA[BX][SI]
@@ -335,25 +345,24 @@ INCLUDE macros.inc
     PLACE_BARR PROC
 
         ; coloca barricadas em pontos aleatorios do tabuleiro
-        ; n de barricadas muda com o tamanho da matriz (BARR = DIM - 2)
-        ; a posição das barricadas eh salva em LAST_BARR 
-        ; para depois remove-las e colocar novas a proxima vez que PLACE_BARR for chamado
+        ; numero de barricadas muda com o tamanho da matriz (BARR = DIM - 2)
+        ; a posição das barricadas eh salva em LAST_BARR para remove-las no próximo turno
 
         PUSHALL
         PUSH DI
 
-        ; q de barrs a serem removidas
+        ; qantidade de barrs a serem removidas
         MOV CX,DIM
         SUB CX,2
         XOR DI,DI
 
-        ; pega pos das ultimas barrs no LAST_BARR
+        ; pega posição das ultimas barrs no LAST_BARR
         REMOVE:
             MOV BX,LAST_BARR[DI]
             MOV SI,LAST_BARR[DI+2]
             AND BX,00FFh
             AND SI,00FFh
-            ; se não tiver uma barreira na pos, para o loop
+            ; se não tiver uma barreira na pos, pula o loop
             CMP VELHA[BX][SI],178
             JNE STOP
 
@@ -363,13 +372,13 @@ INCLUDE macros.inc
             ADD DI,4
         LOOP REMOVE
 
-        ; se o tabuleiro e menor que 3x3, barricadas não são colocadas
+        ; se o tabuleiro eh menor que 3x3, barricadas não são colocadas
         MOV AL,DIM
         CMP AL,3
         JB BARRICADED
 
         STOP:
-        ; q de barrs para colocar
+        ; qantidade de barrs para colocar
         MOV CX,DIM
         SUB CX,2
         XOR DI,DI
@@ -526,6 +535,7 @@ INCLUDE macros.inc
                     DEC CL
                 JNZ COLUNA_LOOP
 
+            ; borda e vai para a seguinte linha
             PUSH AX
             PRINT BORDA
             PULA_LINHA
@@ -545,13 +555,13 @@ INCLUDE macros.inc
     VER_COLUNAS PROC
 
         ; inputs:
-        ;   CL = ASCII a comparar
-        ;   DL = Meta
-        ;   DI = Começa a partir da (DI)a coluna
+        ; CL = ASCII a comparar
+        ; DL = Meta
+        ; DI = Começa a partir da (DI)a coluna
 
         ; outputs:
-        ;   AL = 0 ou 1
-        ;   COORD_STORAGE = BX,SI
+        ; AL = 0 ou 1
+        ; COORD_STORAGE = BX,SI
 
         ; escaneia as colunas por um valor igual a CL
         ; cada sucesso incrementa o contador CH
@@ -630,13 +640,13 @@ INCLUDE macros.inc
     VER_LINHAS PROC
 
         ; inputs:
-        ;   CL = ASCII a comparar
-        ;   DL = Meta
-        ;   DI = Começa a partir da (DI)a linha
+        ; CL = ASCII a comparar
+        ; DL = Meta
+        ; DI = Começa a partir da (DI)a linha
 
         ; outputs:
-        ;   AL = 0 ou 1
-        ;   COORD_STORAGE = BX,SI
+        ; AL = 0 ou 1
+        ; COORD_STORAGE = BX,SI
 
         ; escaneia as linhas por um valor igual a CL
         ; cada sucesso incrementa o contador CH
@@ -721,13 +731,13 @@ INCLUDE macros.inc
     VER_DIAGONAIS PROC
 
         ; inputs:
-        ;   CL = ASCII a comparar
-        ;   DL = Meta
-        ;   DI = Começa a partir da (DI)a diagonal (0-1)
+        ; CL = ASCII a comparar
+        ; DL = Meta
+        ; DI = Começa a partir da (DI)a diagonal (0-1)
 
         ; outputs:
-        ;   AL = 0 ou 1
-        ;   COORD_STORAGE = BX,SI
+        ; AL = 0 ou 1
+        ; COORD_STORAGE = BX,SI
 
         ; escaneia as diagonais por um valor igual a CL
         ; cada sucesso incrementa um contador CH
@@ -872,6 +882,7 @@ INCLUDE macros.inc
     RNG PROC
 
         ; retorna com um valor aleatório de 1 a DI em AX
+        ; semi-inspirado no código apresentado em (https://youtu.be/TWitXMmX06E)
         ; se DI eh zero, retorna zero
 
         PUSH BX
@@ -887,7 +898,7 @@ INCLUDE macros.inc
         MOV AX,RNG_VELHO
         XOR AX,DX
         XOR AX,CX
-        ; n aleatório constante
+        ; numero aleatório constante
         ADD AX,037A1h
 
         ; seed (em AX) = seed * 25173 (constante aleatoria) + 13849 (const aleatoria)
@@ -924,6 +935,10 @@ INCLUDE macros.inc
     RNG ENDP
 
     CHECK_WINNING PROC
+
+        ; verifica se o CPU pode ganhar ou bloquear a vitoria do jogador
+        ; se pode ganhar ou bloquear, retorna com AL = 1 e o CPU guarda as coordenadas em BX(coluna) e SI(linha)
+
         ; Começa checando posivel vitoria ('O')
         MOV CL,'O'
         ; DI determina a partir de qual coluna/linha/diagonal o escaneio acontece
@@ -1220,11 +1235,11 @@ INCLUDE macros.inc
     TESTA_FORK PROC
 
         ; input:
-        ;   CL = jogador
+        ; CL = jogador
         ; output:
-        ;   AL = 0-1
+        ; AL = 0-1
 
-        ; Verifica se existe mais de uma possível vitória do jogador
+        ; Verifica se existe mais de uma possível vitória
 
         ; contador de possiveis vitorias
         XOR DH,DH
